@@ -505,6 +505,32 @@ vector<V> at_keys(map<K,V> const& m,vector<K> keys){
 	return r;
 }
 
+template<typename T>
+set<T>& operator|=(std::set<T>& a,T t){
+	a.insert(t);
+	return a;
+}
+
+template<typename K,typename V>
+set<K> keys(map<K,V> const& m){
+	set<K> r;
+	for(auto [k,v]:m){
+		r|=k;
+	}
+	return r;
+}
+
+template<typename T>
+T choose(vector<T> const& a){
+	assert(a.size());
+	return a[rand()%a.size()];
+}
+
+template<typename T>
+T choose(set<T> const& a){
+	return choose(to_vec(a));
+}
+
 //start program-specific code
 
 using Team=string;//number and then optionally a char.
@@ -910,37 +936,40 @@ Picklist make_picklist(Team picker,map<Team,Robot_capabilities> const& cap,Aux_d
 	return m;
 }
 
-template<typename T>
-set<T>& operator|=(std::set<T>& a,T t){
-	a.insert(t);
-	return a;
+vector<string> args(int argc,char **argv){
+	return mapf(
+		[=](auto i){ return string{argv[i]}; },
+		range(1,argc)
+	);
 }
 
-template<typename K,typename V>
-set<K> keys(map<K,V> const& m){
-	set<K> r;
-	for(auto [k,v]:m){
-		r|=k;
+int main(int argc,char **argv){
+	auto a=args(argc,argv);
+	Team picker="NONE";
+	optional<string> input_file; //or random; and if random, then write out the example CSV.
+	for(auto at=begin(a);at!=end(a);++at){
+		if(*at=="--picker"){
+			at++;
+			assert(at!=end(a));
+			picker=*at;
+			continue;
+		}
+		if(*at=="--in"){
+			at++;
+			assert(at!=end(a));
+			input_file=*at;
+			continue;
+		}
+		cout<<"Unrecognized argument.\n";
+		return 1;
 	}
-	return r;
-}
-
-template<typename T>
-T choose(vector<T> const& a){
-	assert(a.size());
-	return a[rand()%a.size()];
-}
-
-template<typename T>
-T choose(set<T> const& a){
-	return choose(to_vec(a));
-}
-
-int main(){
 	auto s=rand((const Scouting_data*)nullptr);
 	//s=take(1,s);
 	stringstream ss;
 	make_ex(ss,s);
+	ofstream f("ex.csv");
+	f<<ss.str();
+
 	//PRINT(ss.str());
 	auto p=parse(ss.str());
 	if(p!=s){
@@ -960,7 +989,7 @@ int main(){
 
 	write_file("robot_capabilities.html",to_html(cap));
 	//Team picker="1425";
-	Team picker=choose(keys(cap));
+	if(picker=="NONE") picker=choose(keys(cap));
 	{
 		auto p=make_picklist(picker,cap,aux);
 		//PRINT(p);
