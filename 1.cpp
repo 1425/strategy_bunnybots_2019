@@ -35,6 +35,12 @@ using namespace std;
 		return vector<string>{X(ITEMS_INNER)};\
 	}
 
+template<typename T,typename T2>
+std::vector<T>& operator|=(std::vector<T>& a,T2 t){
+	a.push_back(t);
+	return a;
+}
+
 template<typename T,size_t N>
 std::ostream& operator<<(std::ostream& o,std::array<T,N> const& a){
 	o<<"[ ";
@@ -133,12 +139,6 @@ std::ostream& operator<<(std::ostream& o,std::vector<T> const& a){
 	o<<"[ ";
 	for(auto elem:a) o<<elem<<" ";
 	return o<<"]";
-}
-
-template<typename T,typename T2>
-std::vector<T>& operator|=(std::vector<T>& a,T2 t){
-	a.push_back(t);
-	return a;
 }
 
 template<typename A,typename B>
@@ -379,6 +379,27 @@ vector<pair<A,B>> zip(vector<A> const& a,vector<B> const& b){
 	vector<pair<A,B>> r;
 	for(auto i:range(min(a.size(),b.size()))){
 		r|=make_pair(a[i],b[i]);
+	}
+	return r;
+}
+
+template<typename T>
+optional<T> maybe_get(vector<T> const& a,size_t n){
+	if(n<a.size()) return a[n];
+	return std::nullopt;
+}
+
+template<typename T>
+std::ostream& operator<<(std::ostream& o,std::optional<T> const& a){
+	if(a) return o<<*a;
+	return o<<"NULL";
+}
+
+template<typename A,typename B>
+vector<pair<optional<A>,optional<B>>> zip_expand(vector<A> const& a,vector<B> const& b){
+	vector<std::pair<optional<A>,optional<B>>> r;
+	for(auto i:range(max(a.size(),b.size()))){
+		r|=make_pair(maybe_get(a,i),maybe_get(b,i));
 	}
 	return r;
 }
@@ -739,6 +760,10 @@ Scouting_data parse(string const& s){
 
 	auto expected_header=items((const Match_data*)nullptr);
 	auto hf=split(header,',');
+	if(hf!=expected_header){
+		cout<<"Header mismatch:";
+		print_lines(enumerate(zip_expand(expected_header,hf)));
+	}
 	assert(hf==expected_header);
 
 	Scouting_data r;
@@ -961,28 +986,50 @@ int main(int argc,char **argv){
 			input_file=*at;
 			continue;
 		}
+		if(*at=="--help"){
+			cout<<"Team 1425 Bunnybots 2019 picking program\n";
+			cout<<"--help\n";
+			cout<<"\tShow this message\n";
+			cout<<"--picker\n";
+			cout<<"\tSpecify team that should be doing the picking\n";
+			cout<<"--in\n";
+			cout<<"\tInput file.  Should be csv format.  \n";
+			return 0;
+		}
 		cout<<"Unrecognized argument.\n";
 		return 1;
 	}
-	auto s=rand((const Scouting_data*)nullptr);
-	//s=take(1,s);
-	stringstream ss;
-	make_ex(ss,s);
-	ofstream f("ex.csv");
-	f<<ss.str();
 
-	//PRINT(ss.str());
-	auto p=parse(ss.str());
-	if(p!=s){
-		diff(p,s);
-	}
-	assert(p==s);
+	auto data=[=](){
+		if(input_file){
+			ifstream f(*input_file);
+			stringstream ss;
+			while(f){
+				string s;
+				getline(f,s);
+				ss<<s<<"\n";
+			}
+			return parse(ss.str());
+		}else{
+			auto s=rand((const Scouting_data*)nullptr);
+			stringstream ss;
+			make_ex(ss,s);
+			ofstream f("ex.csv");
+			f<<ss.str();
 
-	//PRINT(s);
-	//print_lines(s);
-	explore_data(s);
-	auto cap=to_capabilities(s);
-	auto aux=gen_aux_data(s);
+			//PRINT(ss.str());
+			auto p=parse(ss.str());
+			if(p!=s){
+				diff(p,s);
+			}
+			assert(p==s);
+			return s;
+		}
+	}();
+	
+	explore_data(data);
+	auto cap=to_capabilities(data);
+	auto aux=gen_aux_data(data);
 	PRINT(aux);
 
 	//cout<<"\nRobot Capabilities\n";
