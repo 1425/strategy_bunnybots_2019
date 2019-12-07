@@ -515,6 +515,7 @@ template<typename K,typename V>
 set<K> keys(map<K,V> const& m){
 	set<K> r;
 	for(auto [k,v]:m){
+		(void)v;
 		r|=k;
 	}
 	return r;
