@@ -917,6 +917,9 @@ Picklist make_picklist(Team picker,map<Team,Robot_capabilities> const& cap,Aux_d
 	PRINT(baseline_picks);
 
 	auto baseline_teams=take(3,skip(10,seconds(baseline_picks)));
+	if(baseline_teams.empty()){
+		baseline_teams=seconds(baseline_picks);
+	}
 	auto baseline_caps=at_keys(cap,baseline_teams);//mapf([=](auto a){ return cap[a]; },baseline_teams);
 	auto baseline_cap=mean(baseline_caps);
 	PRINT(baseline_cap);
