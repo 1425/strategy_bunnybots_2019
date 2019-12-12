@@ -335,6 +335,9 @@ vector<string> lines(string s){
 	while(ss.good()){
 		string line;
 		getline(ss,line);
+		if(line.size() && line[line.size()-1]=='\r'){
+			line=line.substr(0,line.size()-1);
+		}
 		r|=line;
 	}
 	return r;
@@ -762,7 +765,12 @@ Scouting_data parse(string const& s){
 	auto hf=split(header,',');
 	if(hf!=expected_header){
 		cout<<"Header mismatch:";
-		print_lines(enumerate(zip_expand(expected_header,hf)));
+		//print_lines(enumerate(zip_expand(expected_header,hf)));
+		for(auto p:enumerate(zip_expand(expected_header,hf))){
+			if(p.second.first!=p.second.second){
+				cout<<p.first<<": \""<<p.second.first<<"\" \""<<p.second.second<<"\"\n";
+			}
+		}
 	}
 	assert(hf==expected_header);
 
